@@ -1,15 +1,22 @@
 package arlistak;
 
+import java.io.FileWriter;
 import java.io.IOException;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 
 public class Arlistak {
 
 	public static final LinkedHashMap<String, ArrayList<String>> HANGZAVAR_NETSOFT_EXPORT = new LinkedHashMap<>();
+	public static final LinkedHashMap<String, ArrayList<String>> NETSOFT_ARLISTAK = new LinkedHashMap<>();
 	private static String hangzavarNetsoftFile;
+	private static ArrayList<String> toFile = new ArrayList<>();
 
 	public static void main(String[] args) throws IOException {
+		toFile.add("Termék kód" + ";" + "Árlista" + ";" + "Egységár" + ";" + "Alapár (Nettó)");
 
 		hangzavarNetsoftFile = args[0];
 		System.out.println("ver.: 0.0.1");
@@ -24,26 +31,68 @@ public class Arlistak {
 		double nettoBeszerzesiEgysegar = 0;
 		double nettoEladasiEgysegar = 0;
 		String termekTipus = "";
+		double torzsvasarlo_2_arany = 0.6;
+		double torzsvasarlo_5_nagyker_arany = 0.225;
+		double minimumArszorzo = 1.1099;
+		double torzsvasarlo_2 = 0;
+		double torzsvasarlo_5_nagyker = 0;
 
 		for (String key : HANGZAVAR_NETSOFT_EXPORT.keySet()) {
+
 			if (!HANGZAVAR_NETSOFT_EXPORT.get(key).get(nettoBeszerzesiEgysegarIndex).equals("Beszerzési ár (Nettó)")) {
+
 				nettoBeszerzesiEgysegar = Double.parseDouble(HANGZAVAR_NETSOFT_EXPORT.get(key)
 						.get(nettoBeszerzesiEgysegarIndex).replace("\"", "").replace(",", "."));
 				nettoEladasiEgysegar = Double.parseDouble(HANGZAVAR_NETSOFT_EXPORT.get(key)
 						.get(nettoEladasiEgysegarIndex).replace("\"", "").replace(",", "."));
 				termekTipus = HANGZAVAR_NETSOFT_EXPORT.get(key).get(termekTipusIndex);
-				System.out.println(nettoBeszerzesiEgysegar);
-				System.out.println(nettoEladasiEgysegar);
-				System.out.println(termekTipus);
+
+				if (termekTipus.equals("Termék")) {
+
+					torzsvasarlo_2 = (nettoEladasiEgysegar / minimumArszorzo - nettoBeszerzesiEgysegar)
+							* torzsvasarlo_2_arany + nettoBeszerzesiEgysegar * minimumArszorzo;
+					torzsvasarlo_5_nagyker = (nettoEladasiEgysegar / minimumArszorzo - nettoBeszerzesiEgysegar)
+							* torzsvasarlo_5_nagyker_arany + nettoBeszerzesiEgysegar * minimumArszorzo;
+					toFile.add(key + ";" + "Törzsvásárló 2" + ";" + round(torzsvasarlo_2) + ";"
+							+ round(nettoEladasiEgysegar));
+					toFile.add(key + ";" + "Törzsvásárló 5-nagyker" + ";" + round(torzsvasarlo_5_nagyker) + ";"
+							+ round(nettoEladasiEgysegar));
+				} else if (termekTipus.equals("Szolgáltatás")) {
+					toFile.add(key + ";" + "Törzsvásárló 2" + ";" + round(nettoEladasiEgysegar) + ";"
+							+ round(nettoEladasiEgysegar));
+					toFile.add(key + ";" + "Törzsvásárló 5-nagyker" + ";" + round(nettoBeszerzesiEgysegar) + ";"
+							+ round(nettoEladasiEgysegar));
+				} else {
+					toFile.add(key + ";" + "Törzsvásárló 2" + ";" + "0" + ";" + round(nettoEladasiEgysegar));
+					toFile.add(key + ";" + "Törzsvásárló 5-nagyker" + ";" + "0" + ";" + round(nettoEladasiEgysegar));
+				}
 			}
 		}
-
+		writeToFileCSV();
 	}
-	// return bekerules / minimum_arszorzo - net_eladasi) * torzsvasarlo2_arany +
-	// bekerules * min_arszorzo;
-	//
-	//minimum_arszorzo=1,1099
-	//Schetl László, [11.10.19 11:33]
-	//torzsvasarlo_2_arany=0,6
-	//torzsvasarlo_5-nagyker_arany=0,225
+
+	private static void writeToFileCSV() {
+
+		String time = new Dates().now();
+		FileWriter fw;
+		try {
+			fw = new FileWriter("arlistak_" + time + ".csv");
+			for (String row : toFile) {
+				fw.write(row + "\n");
+			}
+			fw.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static String round(double number) {
+
+		Locale locale = new Locale("hu", "HU");
+		String pattern = ".##";
+		DecimalFormat decimalFormat = (DecimalFormat) NumberFormat.getNumberInstance(locale);
+		decimalFormat.applyPattern(pattern);
+		String formatted = decimalFormat.format(number);
+		return formatted;
+	}
 }
