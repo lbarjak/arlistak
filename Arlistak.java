@@ -16,10 +16,11 @@ public class Arlistak {
 	private static ArrayList<String> toFile = new ArrayList<>();
 
 	public static void main(String[] args) throws IOException {
-		toFile.add("Termék kód" + ";" + "Árlista" + ";" + "Egységár" + ";" + "Alapár (Nettó)");
+		toFile.add("Termék kód" + ";" + "Árlista" + ";" + "Egységár" + ";" + "Alapár (Nettó)" + ";" + "Árrés %" + ";"
+				+ "Kedvezmény %");
 
 		hangzavarNetsoftFile = args[0];
-		System.out.println("ver.: 0.0.1");
+		System.out.println("ver.: 0.0.3");
 		System.out.println("Kapott paraméter: " + hangzavarNetsoftFile);
 		System.out.println("-------------------------------------------\n");
 		new FromCSV().read(hangzavarNetsoftFile);
@@ -36,6 +37,8 @@ public class Arlistak {
 		double minimumArszorzo = 1.1099;
 		double torzsvasarlo_2 = 0;
 		double torzsvasarlo_5_nagyker = 0;
+		String kedvezmenyTorzsvasarlo_2_Percent = "";
+		String kedvezmenyTorzsvasarlo_5_nagykerPercent = "";
 
 		for (String key : HANGZAVAR_NETSOFT_EXPORT.keySet()) {
 
@@ -47,24 +50,36 @@ public class Arlistak {
 						.get(nettoEladasiEgysegarIndex).replace("\"", "").replace(",", "."));
 				termekTipus = HANGZAVAR_NETSOFT_EXPORT.get(key).get(termekTipusIndex);
 
+				if (nettoBeszerzesiEgysegar == 0 && nettoEladasiEgysegar == 0) {
+					toFile.add(key + ";" + "Törzsvásárló 2" + ";" + 0 + ";" + 0 + ";" + 0 + ";" + 0);
+					toFile.add(key + ";" + "Törzsvásárló 5-nagyker" + ";" + 0 + ";" + 0 + ";" + 0 + ";" + 0);
+					continue;
+				}
+
+				String arresPercent = round((1 - nettoBeszerzesiEgysegar / nettoEladasiEgysegar) * 100);
+
 				if (termekTipus.equals("Termék")) {
 
 					torzsvasarlo_2 = (nettoEladasiEgysegar / minimumArszorzo - nettoBeszerzesiEgysegar)
 							* torzsvasarlo_2_arany + nettoBeszerzesiEgysegar * minimumArszorzo;
 					torzsvasarlo_5_nagyker = (nettoEladasiEgysegar / minimumArszorzo - nettoBeszerzesiEgysegar)
 							* torzsvasarlo_5_nagyker_arany + nettoBeszerzesiEgysegar * minimumArszorzo;
+					
+					kedvezmenyTorzsvasarlo_2_Percent = round((1 - torzsvasarlo_2 / nettoEladasiEgysegar) * 100);
+					kedvezmenyTorzsvasarlo_5_nagykerPercent = round(
+							(1 - torzsvasarlo_5_nagyker / nettoEladasiEgysegar) * 100);
+
 					toFile.add(key + ";" + "Törzsvásárló 2" + ";" + round(torzsvasarlo_2) + ";"
-							+ round(nettoEladasiEgysegar));
+							+ round(nettoEladasiEgysegar) + ";" + arresPercent + ";"
+							+ kedvezmenyTorzsvasarlo_2_Percent);
 					toFile.add(key + ";" + "Törzsvásárló 5-nagyker" + ";" + round(torzsvasarlo_5_nagyker) + ";"
-							+ round(nettoEladasiEgysegar));
+							+ round(nettoEladasiEgysegar) + ";" + arresPercent + ";"
+							+ kedvezmenyTorzsvasarlo_5_nagykerPercent);
 				} else if (termekTipus.equals("Szolgáltatás")) {
 					toFile.add(key + ";" + "Törzsvásárló 2" + ";" + round(nettoEladasiEgysegar) + ";"
-							+ round(nettoEladasiEgysegar));
+							+ round(nettoEladasiEgysegar) + ";" + arresPercent + ";" + 0);
 					toFile.add(key + ";" + "Törzsvásárló 5-nagyker" + ";" + round(nettoBeszerzesiEgysegar) + ";"
-							+ round(nettoEladasiEgysegar));
-				} else {
-					toFile.add(key + ";" + "Törzsvásárló 2" + ";" + "0" + ";" + round(nettoEladasiEgysegar));
-					toFile.add(key + ";" + "Törzsvásárló 5-nagyker" + ";" + "0" + ";" + round(nettoEladasiEgysegar));
+							+ round(nettoEladasiEgysegar) + ";" + arresPercent + ";" + 0);
 				}
 			}
 		}
