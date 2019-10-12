@@ -16,8 +16,6 @@ public class Arlistak {
 	private static ArrayList<String> toFile = new ArrayList<>();
 
 	public static void main(String[] args) throws IOException {
-		toFile.add("Termék kód" + ";" + "Árlista" + ";" + "Egységár" + ";" + "Alapár (Nettó)" + ";" + "Árrés %" + ";"
-				+ "Kedvezmény %");
 
 		hangzavarNetsoftFile = args[0];
 		System.out.println("ver.: 0.0.3");
@@ -25,10 +23,17 @@ public class Arlistak {
 		System.out.println("-------------------------------------------\n");
 		new FromCSV().read(hangzavarNetsoftFile);
 
+		toFile.add("Termék kód" + ";" + "Árlista" + ";" + "Egységár" + ";" + "Alapár (Nettó)" + ";" + "Árrés %" + ";"
+				+ "Kedvezmény %");
+		calculate();
+		writeToFileCSV();
+	}
+
+	static void calculate() {
+
 		int nettoBeszerzesiEgysegarIndex = HANGZAVAR_NETSOFT_EXPORT.get("Termék kód").indexOf("Beszerzési ár (Nettó)");
 		int nettoEladasiEgysegarIndex = HANGZAVAR_NETSOFT_EXPORT.get("Termék kód").indexOf("Nettó eladási egységár");
 		int termekTipusIndex = HANGZAVAR_NETSOFT_EXPORT.get("Termék kód").indexOf("Termék típus");
-
 		double nettoBeszerzesiEgysegar = 0;
 		double nettoEladasiEgysegar = 0;
 		String termekTipus = "";
@@ -39,6 +44,7 @@ public class Arlistak {
 		double torzsvasarlo_5_nagyker = 0;
 		String kedvezmenyTorzsvasarlo_2_Percent = "";
 		String kedvezmenyTorzsvasarlo_5_nagykerPercent = "";
+		String arresPercent;
 
 		for (String key : HANGZAVAR_NETSOFT_EXPORT.keySet()) {
 
@@ -56,7 +62,7 @@ public class Arlistak {
 					continue;
 				}
 
-				String arresPercent = round((1 - nettoBeszerzesiEgysegar / nettoEladasiEgysegar) * 100);
+				arresPercent = round((1 - nettoBeszerzesiEgysegar / nettoEladasiEgysegar) * 100);
 
 				if (termekTipus.equals("Termék")) {
 
@@ -64,7 +70,7 @@ public class Arlistak {
 							* torzsvasarlo_2_arany + nettoBeszerzesiEgysegar * minimumArszorzo;
 					torzsvasarlo_5_nagyker = (nettoEladasiEgysegar / minimumArszorzo - nettoBeszerzesiEgysegar)
 							* torzsvasarlo_5_nagyker_arany + nettoBeszerzesiEgysegar * minimumArszorzo;
-					
+
 					kedvezmenyTorzsvasarlo_2_Percent = round((1 - torzsvasarlo_2 / nettoEladasiEgysegar) * 100);
 					kedvezmenyTorzsvasarlo_5_nagykerPercent = round(
 							(1 - torzsvasarlo_5_nagyker / nettoEladasiEgysegar) * 100);
@@ -83,7 +89,6 @@ public class Arlistak {
 				}
 			}
 		}
-		writeToFileCSV();
 	}
 
 	private static void writeToFileCSV() {
