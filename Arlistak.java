@@ -14,13 +14,36 @@ public class Arlistak {
 	public static final LinkedHashMap<String, ArrayList<String>> NETSOFT_ARLISTAK = new LinkedHashMap<>();
 	private static String hangzavarNetsoftFile;
 	private static ArrayList<String> toFile = new ArrayList<>();
+	private static boolean monacor = false;
 
 	public static void main(String[] args) throws IOException {
 
-		hangzavarNetsoftFile = args[0];
+		startElimex();
+	}
+
+	static void startMonacor() throws IOException {
+		
+		monacor = true;
+		// hangzavarNetsoftFile = args[0];
+		hangzavarNetsoftFile = "monacor_netsoft_upload20191108_2234+beszerz.csv";
+		// "Termék kód;Nettó eladási egységár" + ";Beszerzési ár (Nettó);Termék típus"
+		// "MA-303SB;162598,0" + ";0;Termék"
+
 		System.out.println("ver.: 0.0.3");
 		System.out.println("Kapott paraméter: " + hangzavarNetsoftFile);
 		System.out.println("-------------------------------------------\n");
+		new FromCSV().read(hangzavarNetsoftFile);
+
+		toFile.add("Termék kód" + ";" + "Árlista" + ";" + "Egységár" + ";" + "Alapár (Nettó)" + ";" + "Árrés %" + ";"
+				+ "Kedvezmény %");
+		calculate();
+		writeToFileCSV();
+	}
+	
+	static void startElimex() throws IOException {
+		
+		hangzavarNetsoftFile = "elimex_original_reduced20191210_2259.csv";
+		
 		new FromCSV().read(hangzavarNetsoftFile);
 
 		toFile.add("Termék kód" + ";" + "Árlista" + ";" + "Egységár" + ";" + "Alapár (Nettó)" + ";" + "Árrés %" + ";"
@@ -40,6 +63,9 @@ public class Arlistak {
 		double torzsvasarlo_2_arany = 0.6;
 		double torzsvasarlo_5_nagyker_arany = 0.225;
 		double minimumArszorzo = 1.1099;
+//		double torzsvasarlo_2_arany = 1;
+//		double torzsvasarlo_5_nagyker_arany = 1;
+//		double minimumArszorzo = 1;
 		double torzsvasarlo_2 = 0;
 		double torzsvasarlo_5_nagyker = 0;
 		String kedvezmenyTorzsvasarlo_2_Percent = "";
@@ -68,8 +94,13 @@ public class Arlistak {
 
 					torzsvasarlo_2 = (nettoEladasiEgysegar / minimumArszorzo - nettoBeszerzesiEgysegar)
 							* torzsvasarlo_2_arany + nettoBeszerzesiEgysegar * minimumArszorzo;
-					torzsvasarlo_5_nagyker = (nettoEladasiEgysegar / minimumArszorzo - nettoBeszerzesiEgysegar)
-							* torzsvasarlo_5_nagyker_arany + nettoBeszerzesiEgysegar * minimumArszorzo;
+
+					 torzsvasarlo_5_nagyker = (nettoEladasiEgysegar / minimumArszorzo -
+					 nettoBeszerzesiEgysegar)
+					 * torzsvasarlo_5_nagyker_arany + nettoBeszerzesiEgysegar * minimumArszorzo;
+					 if (monacor == true) {
+						 torzsvasarlo_5_nagyker = nettoBeszerzesiEgysegar * 1.12;
+					 }
 
 					kedvezmenyTorzsvasarlo_2_Percent = round((1 - torzsvasarlo_2 / nettoEladasiEgysegar) * 100);
 					kedvezmenyTorzsvasarlo_5_nagykerPercent = round(
